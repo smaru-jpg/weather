@@ -32,3 +32,6 @@
    ```
 
 기본 KIM 분석시각은 **2026-11-21 00 UTC**, 예측시간은 0시간입니다. 같은 시각의 자료를 비교하려면 관측과 GFS 파일의 시각을 확인하고 필요에 따라 `kim_data.py`의 `tmfc` 기본값을 조정하세요.
+
+참고
+https://aim.koca.go.kr/eaipPub/Package/2023-09-21/html/eAIC/AIC%205-en-GB.pdf
