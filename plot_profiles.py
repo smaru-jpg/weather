@@ -6,6 +6,7 @@ from getpass import getpass
 from obs_sonde_data import zonde
 from gfs_data2 import gfs_data, wind_direction_speed
 from kim_data import KimResponseFormatError, kim_data, parse_kim_levels
+from Nullschool import NULLSCHOOL_PROFILES
 
 
 # (관측 파일의 지점명, 위도, 경도)
@@ -47,9 +48,20 @@ def plot_comparison_profiles(observations, results, station_name="백령도", *,
 
     for observed_at, profile in observations.groupby("일시(UTC)", sort=True):
         profile = profile.sort_values(pressure_column)
+        nullschool_profile = NULLSCHOOL_PROFILES.get((station_name, observed_at), {})
+        nullschool = pd.DataFrame(
+            nullschool_profile.get("rows", []),
+            columns=[pressure_column, "기온(°C)", "풍향(deg)", "풍속(m/s)", "고도(gpm)"],
+        )
+        nullschool = nullschool.dropna(
+            how="all", subset=[model_column for _, model_column, _ in panels],
+        ).sort_values(pressure_column)
+        comparison_names = model_names
+        if not nullschool.empty:
+            comparison_names += f" vs Nullschool ({nullschool_profile['valid_at']})"
         figure, axes = plt.subplots(1, 4, sharey=True, figsize=(14, 6), layout="constrained")
         figure.suptitle(
-            f"{station_name} | Radiosonde ({observed_at} UTC) vs {model_names}",
+            f"{station_name} | Radiosonde ({observed_at} UTC) vs {comparison_names}",
             fontfamily="Malgun Gothic",
         )
 
@@ -88,6 +100,13 @@ def plot_comparison_profiles(observations, results, station_name="백령도", *,
                     kim_values * scale + offset, kim[pressure_column],
                     marker="s", linestyle=line_style, linewidth=0.7,
                     color="green", markersize=4, label="KIM",
+                )
+            if not nullschool.empty:
+                nullschool_values = pd.to_numeric(nullschool[gfs_column], errors="coerce")
+                axis.plot(
+                    nullschool_values * scale + offset, nullschool[pressure_column],
+                    marker="D", linestyle=line_style, linewidth=0.7,
+                    color="purple", markersize=4, label="Nullschool",
                 )
             axis.set_xlabel(label)
             axis.grid(alpha=0.3)
